@@ -27,18 +27,30 @@ int crear_conexion(char *ip, char* puerto)
 	hints.ai_flags = AI_PASSIVE;
 
 	getaddrinfo(ip, puerto, &hints, &server_info);
-
+	
 	// Ahora vamos a crear el socket.
-	int socket_cliente = 0;
+	int socket_cliente = socket(server_info->ai_family,
+							server_info->ai_socktype,
+							server_info->ai_protocol);
 
 	// Ahora que tenemos el socket, vamos a conectarlo
-
-
+	int status = getaddrinfo(ip, puerto, &hints, &server_info);
+	status = connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
+	 if (status == -1) {
+        perror("Error al conectar con el servidor");
+        close(socket_cliente);
+        freeaddrinfo(server_info);
+        return -1;
+    }else{
+		printf("Conecto al server!\n");
+	}
 	freeaddrinfo(server_info);
 
 	return socket_cliente;
 }
+void testeo_handshake(int socket_cliente){
 
+}
 void enviar_mensaje(char* mensaje, int socket_cliente)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -53,8 +65,11 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
-	send(socket_cliente, a_enviar, bytes, 0);
-
+	int cant_bytes = send(socket_cliente, a_enviar, bytes, 0);
+	if (cant_bytes  == -1) {
+		// Se produjo un error en el envío
+		perror("Error al enviar datos");
+	}
 	free(a_enviar);
 	eliminar_paquete(paquete);
 }
